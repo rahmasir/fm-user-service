@@ -6,6 +6,7 @@ import org.rahmasir.fmuserservice.dto.*;
 import org.rahmasir.fmuserservice.entity.EmployerProfile;
 import org.rahmasir.fmuserservice.entity.FreelancerProfile;
 import org.rahmasir.fmuserservice.entity.User;
+import org.rahmasir.fmuserservice.exception.CustomExceptions;
 import org.rahmasir.fmuserservice.mapper.UserMapper;
 import org.rahmasir.fmuserservice.repository.EmployerProfileRepository;
 import org.rahmasir.fmuserservice.repository.FreelancerProfileRepository;
@@ -18,10 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/**
- * Implementation of the UserService interface.
- * Contains the business logic for user registration and profile management.
- */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -35,46 +32,50 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User register(RegisterRequest request) {
+    public FreelancerProfileDto registerFreelancer(FreelancerRegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            // In a real application, throw a custom exception
-            throw new IllegalArgumentException("Email is already in use");
+            throw new CustomExceptions.EmailAlreadyExistsException("Email is already in use: " + request.email());
         }
 
-        var user = new User(
+        User user = new User(
                 request.email(),
                 passwordEncoder.encode(request.password()),
-                request.role()
+                UserRole.FREELANCER
         );
+        var profile = new FreelancerProfile(user, request.name());
+        user.setFreelancerProfile(profile);
 
-        if (request.role() == UserRole.FREELANCER) {
-            // handle here to avoid duplicating of extra DTO for each type of user
-            if (request.name() == null || request.name().isBlank()) {
-                throw new IllegalArgumentException("Freelancer name is required");
-            }
-            FreelancerProfile profile = new FreelancerProfile(user, request.name());
-            user.setFreelancerProfile(profile);
-        } else if (request.role() == UserRole.EMPLOYER) {
-            if (request.companyName() == null || request.companyName().isBlank()) {
-                throw new IllegalArgumentException("Company name is required");
-            }
-            EmployerProfile profile = new EmployerProfile(user, request.companyName());
-            user.setEmployerProfile(profile);
+        User savedUser = userRepository.save(user);
+        return userMapper.toFreelancerProfileDto(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public EmployerProfileDto registerEmployer(EmployerRegisterRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new CustomExceptions.EmailAlreadyExistsException("Email is already in use: " + request.email());
         }
 
-        return userRepository.save(user);
+        User user = new User(
+                request.email(),
+                passwordEncoder.encode(request.password()),
+                UserRole.EMPLOYER
+        );
+        var profile = new EmployerProfile(user, request.companyName());
+        user.setEmployerProfile(profile);
+
+        User savedUser = userRepository.save(user);
+        return userMapper.toEmployerProfileDto(savedUser);
     }
 
     @Override
     @Transactional(readOnly = true)
     public FreelancerProfileDto getFreelancerProfile(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found")); // Replace with custom exception
+                .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("User not found with id: " + userId));
         if (user.getRole() != UserRole.FREELANCER) {
-            throw new IllegalArgumentException("User is not a freelancer");
+            throw new CustomExceptions.ForbiddenAccessException("Access denied. User is not a freelancer.");
         }
-        // Eagerly fetch skills within the transaction
-        user.getFreelancerProfile().getSkills().size();
         return userMapper.toFreelancerProfileDto(user);
     }
 
@@ -82,9 +83,9 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public EmployerProfileDto getEmployerProfile(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("User not found with id: " + userId));
         if (user.getRole() != UserRole.EMPLOYER) {
-            throw new IllegalArgumentException("User is not an employer");
+            throw new CustomExceptions.ForbiddenAccessException("Access denied. User is not an employer.");
         }
         return userMapper.toEmployerProfileDto(user);
     }
@@ -93,22 +94,20 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public FreelancerProfileDto updateFreelancerProfile(UUID userId, UpdateFreelancerProfileRequest request) {
         FreelancerProfile profile = freelancerProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("Freelancer profile not found for user id: " + userId));
 
         userMapper.updateFreelancerProfileFromDto(request, profile);
         profile.setSkills(skillService.findOrCreateSkills(request.skills()));
 
-        FreelancerProfile updatedProfile = freelancerProfileRepository.save(profile);
-        // Eagerly fetch skills to return in the DTO
-        updatedProfile.getSkills().size();
-        return userMapper.toFreelancerProfileDto(updatedProfile.getUser());
+        freelancerProfileRepository.save(profile);
+        return getFreelancerProfile(userId); // Re-fetch to get the DTO with updated skills
     }
 
     @Override
     @Transactional
     public EmployerProfileDto updateEmployerProfile(UUID userId, UpdateEmployerProfileRequest request) {
         EmployerProfile profile = employerProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("Employer profile not found for user id: " + userId));
 
         userMapper.updateEmployerProfileFromDto(request, profile);
         EmployerProfile updatedProfile = employerProfileRepository.save(profile);

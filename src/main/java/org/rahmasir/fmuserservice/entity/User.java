@@ -33,7 +33,7 @@ public class User implements UserDetails {
     private String email;
 
     @Column(nullable = false)
-    private String password;
+    private String hashedPassword;
 
     @Convert(converter = UserRoleConverter.class)
     @Column(nullable = false)
@@ -48,9 +48,9 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private EmployerProfile employerProfile;
 
-    public User(String email, String password, UserRole role) {
+    public User(String email, String hashedPassword, UserRole role) {
         this.email = email;
-        this.password = password;
+        this.hashedPassword = hashedPassword;
         this.role = role;
     }
 
@@ -60,6 +60,11 @@ public class User implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // The role is prefixed with "ROLE_" as per Spring Security's convention.
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
+    @Override
+    public String getPassword() {
+        return hashedPassword;
     }
 
     @Override

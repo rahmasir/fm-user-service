@@ -1,4 +1,4 @@
-package org.rahmasir.userservice.dto;
+package org.rahmasir.fmuserservice.dto;
 
 import java.util.UUID;
 

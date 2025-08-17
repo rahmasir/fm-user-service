@@ -22,6 +22,7 @@
         <java.version>21</java.version>
         <jjwt.version>0.12.3</jjwt.version>
         <springdoc.version>2.2.0</springdoc.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
     </properties>
 
     <dependencies>
@@ -108,6 +109,13 @@
             <groupId>org.rahmasir</groupId>
             <artifactId>fm-shared-lib</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Mapper -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
         </dependency>
     </dependencies>
 

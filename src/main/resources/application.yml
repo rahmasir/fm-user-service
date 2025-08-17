@@ -1,0 +1,49 @@
+# Server Configuration
+server:
+  port: 8081 # Port for the User Service
+
+# Spring Application Configuration
+spring:
+  application:
+    name: fm-user-service
+
+  # Database (PostgreSQL) Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fm_user_service_db
+    username: fm_user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  # JPA and Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate # Use 'validate' to check schema against entities. Use Flyway/Liquibase for migrations.
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Redis Cache Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cache:
+    type: redis
+
+# OpenAPI (Swagger UI) Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Custom Application Properties
+# This is a secure place to define custom properties like JWT secrets.
+# For production, these should be loaded from environment variables or a config server.
+jwt:
+  secret: "change-this-secret-key-in-production-environment-to-something-very-long-and-secure"
+  expiration-ms: 86400000 # 24 hours in milliseconds
+

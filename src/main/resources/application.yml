@@ -17,7 +17,7 @@ spring:
   # JPA and Hibernate Configuration
   jpa:
     hibernate:
-      ddl-auto: validate # Use 'validate' to check schema against entities. Use Flyway/Liquibase for migrations.
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -44,6 +44,6 @@ springdoc:
 # This is a secure place to define custom properties like JWT secrets.
 # For production, these should be loaded from environment variables or a config server.
 jwt:
-  secret: "change-this-secret-key-in-production-environment-to-something-very-long-and-secure"
+  secret: "tA84oHRygnJ4LF4ARCKuvQ4gcVGxKp8GVeKjcweW8zL5thSw7BEAJgNzGJadgC2k"
   expiration-ms: 86400000 # 24 hours in milliseconds
 

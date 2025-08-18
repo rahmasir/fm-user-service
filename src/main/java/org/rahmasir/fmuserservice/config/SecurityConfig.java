@@ -1,5 +1,6 @@
 package org.rahmasir.fmuserservice.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.rahmasir.fmuserservice.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Enables method-level security annotations like @PreAuthorize
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -34,15 +35,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF as we are using stateless JWT authentication
                 .csrf(AbstractHttpConfigurer::disable)
-                // Define authorization rules for different endpoints
+                // This is the new section that handles authentication errors.
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
+                        )
+                )
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/auth/**", "/swagger-ui/**", "/api-docs/**").permitAll()
                         .anyRequest().authenticated())
-                // Configure session management to be stateless
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Add our custom JWT authentication filter before the standard password authentication filter
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -55,8 +59,8 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        var authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(this.userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

@@ -73,8 +73,8 @@ public class UserServiceImpl implements UserService {
     public FreelancerProfileDto getFreelancerProfile(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("User not found with id: " + userId));
-        if (user.getRole() != UserRole.FREELANCER) {
-            throw new CustomExceptions.ForbiddenAccessException("Access denied. User is not a freelancer.");
+        if (user.getFreelancerProfile() == null) {
+            throw new CustomExceptions.ResourceNotFoundException("Freelancer profile not found for user id: " + userId);
         }
         return userMapper.toFreelancerProfileDto(user);
     }
@@ -84,8 +84,8 @@ public class UserServiceImpl implements UserService {
     public EmployerProfileDto getEmployerProfile(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomExceptions.ResourceNotFoundException("User not found with id: " + userId));
-        if (user.getRole() != UserRole.EMPLOYER) {
-            throw new CustomExceptions.ForbiddenAccessException("Access denied. User is not an employer.");
+        if (user.getEmployerProfile() == null) {
+            throw new CustomExceptions.ResourceNotFoundException("Employer profile not found for user id: " + userId);
         }
         return userMapper.toEmployerProfileDto(user);
     }

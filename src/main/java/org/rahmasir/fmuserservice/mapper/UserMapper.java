@@ -16,45 +16,29 @@ import org.rahmasir.fmuserservice.entity.User;
 @Mapper(componentModel = "spring") // Generates a Spring bean for dependency injection
 public interface UserMapper {
 
-    /**
-     * Converts a Skill entity to a SkillDto.
-     *
-     * @param skill The Skill entity.
-     * @return The corresponding SkillDto.
-     */
     SkillDto toSkillDto(Skill skill);
 
-    /**
-     * Converts a User entity to a FreelancerProfileDto.
-     * It maps fields from both the User and its associated FreelancerProfile.
-     *
-     * @param user The User entity, which must have a non-null freelancerProfile.
-     * @return The corresponding FreelancerProfileDto.
-     */
     @Mapping(source = "freelancerProfile.name", target = "name")
     @Mapping(source = "freelancerProfile.bio", target = "bio")
     @Mapping(source = "freelancerProfile.skills", target = "skills")
     FreelancerProfileDto toFreelancerProfileDto(User user);
 
-    /**
-     * Converts a User entity to an EmployerProfileDto.
-     * It maps fields from both the User and its associated EmployerProfile.
-     *
-     * @param user The User entity, which must have a non-null employerProfile.
-     * @return The corresponding EmployerProfileDto.
-     */
     @Mapping(source = "employerProfile.companyName", target = "companyName")
     @Mapping(source = "employerProfile.bio", target = "bio")
     EmployerProfileDto toEmployerProfileDto(User user);
 
     /**
      * Updates an existing FreelancerProfile entity from an UpdateFreelancerProfileRequest DTO.
-     * The @MappingTarget annotation tells MapStruct to update the provided 'profile' object
-     * instead of creating a new one.
+     * The 'skills' field is ignored because it requires special business logic (findOrCreate)
+     * which is handled in the service layer. 'id' and 'user' are also ignored as they should
+     * not be changed during an update.
      *
      * @param dto     The DTO containing the updated data.
      * @param profile The entity to be updated.
      */
+    @Mapping(target = "skills", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
     void updateFreelancerProfileFromDto(UpdateFreelancerProfileRequest dto, @MappingTarget FreelancerProfile profile);
 
     /**
@@ -63,5 +47,7 @@ public interface UserMapper {
      * @param dto     The DTO containing the updated data.
      * @param profile The entity to be updated.
      */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
     void updateEmployerProfileFromDto(UpdateEmployerProfileRequest dto, @MappingTarget EmployerProfile profile);
 }
